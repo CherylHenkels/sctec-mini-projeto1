@@ -113,6 +113,41 @@ def criar_colunas_derivadas(df_limpo):
 
     return df
 
+def calcular_metricas(df):
+    """RF05 – Calcular Métricas Agregadas (groupby)."""
+    metricas = {}
+
+    # Receita por mês
+    por_mes = df.groupby("mes").agg(
+        receita_total=("receita_total", "sum"),
+        quantidade=("quantidade", "sum"),
+        n_vendas=("id_venda", "count")
+    ).reset_index().sort_values("mes")
+    metricas["por_mes"] = por_mes
+
+    # Top 5 produtos por receita
+    top_produtos = df.groupby("produto")["receita_total"].sum()\
+                    .sort_values(ascending=False).head(5).reset_index()
+    metricas["top_produtos"] = top_produtos
+
+    # Receita por categoria
+    por_categoria = df.groupby("categoria")["receita_total"].sum().reset_index()
+    metricas["por_categoria"] = por_categoria
+
+    # Receita por região
+    por_regiao = df.groupby("regiao").agg(
+        receita_total=("receita_total", "sum"),
+        media_ticket=("receita_total", "mean")
+    ).reset_index().sort_values("receita_total", ascending=False)
+    metricas["por_regiao"] = por_regiao
+
+    # Exibição bonita no console usando o mesmo padrão do capitalize
+    for nome, tabela in metricas.items():
+        print(f"=== {nome.upper().replace('_', ' ')} ===")
+        print(tabela.to_string(index=False))
+        print("===============================\n")
+
+    return metricas
 
 # BLOCO PRINCIPAL
 if __name__ == "__main__":
@@ -130,6 +165,9 @@ if __name__ == "__main__":
         
         # Vamos executar o enriquecimento (RF04)
         df_enriquecido = criar_colunas_derivadas(df_limpo)
+
+        #RF05: Calcula as agregações estatísticas
+        dicionario_metricas = calcular_metricas(df_enriquecido)
         
         # Vamos salvar o resultado final processado
         df_enriquecido.to_csv("vendas_limpo.csv", index=False)
