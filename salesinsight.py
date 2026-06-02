@@ -178,6 +178,42 @@ def segmentar_clientes(df):
 
     return clientes
 
+def calcular_estatisticas_numpy(df):
+    """RF07 – Calcular Estatísticas Avançadas com NumPy."""
+    print("=== ESTATÍSTICAS MATRICIAIS COM NUMPY ===")
+
+    #Conversão da coluna do DataFrame para array NumPy bruto
+    receitas = df["receita_total"].to_numpy()
+
+    # 2. Uso de múltiplas funções estatísticas nativas do NumPy
+    media = np.mean(receitas)
+    mediana = np.median(receitas)
+    desvio_padrao = np.std(receitas)
+    total = np.sum(receitas)
+    p25 = np.percentile(receitas, 25)
+    p75 = np.percentile(receitas, 75)
+
+    print(f"  Receita média por venda:    R$ {media:.2f}")
+    print(f"  Receita mediana por venda:  R$ {mediana:.2f}")
+    print(f"  Desvio padrão amostral:     R$ {desvio_padrao:.2f}")
+    print(f"  Faturamento total acumulado:R$ {total:.2f}")
+    print(f"  Percentil 25 (Q1):          R$ {p25:.2f}")
+    print(f"  Percentil 75 (Q3):          R$ {p75:.2f}")
+
+    #Demonstração de Broadcasting: normalizar vetor de receitas entre 0 e 1 de uma vez
+    receitas_normalizadas = (receitas - receitas.min()) / (receitas.max() - receitas.min())
+    print(f"\n  Vetor normalizado via Broadcasting (primeiros 5): {receitas_normalizadas[:5].round(4)}")
+
+    #Operação vetorizada: filtragem condicional em blocos de memória C (sem loops 'for')
+    acima_da_media = receitas[receitas > media]
+    print(f"  Vendas estritamente acima da média: {len(acima_da_media)} de {len(receitas)}")
+    print("=========================================\n")
+
+    return {
+        "media": media, "mediana": mediana,
+        "desvio_padrao": desvio_padrao, "total": total
+    }
+
 # BLOCO PRINCIPAL
 if __name__ == "__main__":
     path = "vendas.csv"
@@ -189,17 +225,20 @@ if __name__ == "__main__":
         # Vamos executar a inspeção e leitura dos dados (RF02)
         inspecionar_dados(df_vendas)
         
-        # Vamos executar a limpeza (RF03)
+        #RF03: Vamos executar a limpeza
         df_limpo, relatorio_limpeza = limpar_dados(df_vendas)
         
-        # Vamos executar o enriquecimento (RF04)
+        #RF04: Vamos executar o enriquecimento
         df_enriquecido = criar_colunas_derivadas(df_limpo)
 
-        #RF05: Calcula as agregações estatísticas
+        #RF05: Vamos calcular as agregações estatísticas
         dicionario_metricas = calcular_metricas(df_enriquecido)
 
-        #RF06: Segmenta e classifica nossa carteira de clientes
+        #RF06: Vamos segmentar e classificar nossa carteira de clientes
         df_clientes_segmentados = segmentar_clientes(df_enriquecido)
+
+        #RF07: Processamento estatístico matricial via NumPy
+        estatisticas_np = calcular_estatisticas_numpy(df_enriquecido)
                 
         # Vamos salvar o resultado final processado
         df_enriquecido.to_csv("vendas_limpo.csv", index=False)
