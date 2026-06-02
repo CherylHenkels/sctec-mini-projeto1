@@ -159,7 +159,7 @@ def segmentar_clientes(df):
         frequencia_compras=("id_venda", "count")
     ).reset_index()
 
-    # Classificação usando a função lambda com as condições exigidas
+    # AQUI USAMOS A FUNÇÃO LAMBDA E O CONDICIONAL!: Classificação usando a função lambda com as condições exigidas
     clientes["segmento"] = clientes["total_gasto"].apply(
         lambda gasto: "Ouro" if gasto > 15000
                       else ("Prata" if gasto >= 5000 else "Bronze")
