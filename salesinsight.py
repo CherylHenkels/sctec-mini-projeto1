@@ -76,3 +76,64 @@ def limpar_dados(df_bruto):
     print("============================\n")
 
     return df, relatorio
+
+def criar_colunas_derivadas(df_limpo):
+    """RF04 – Criar Colunas Derivadas com Transformações."""
+    # Criamos uma cópia para trabalhar com segurança nas novas colunas
+    df = df_limpo.copy()
+
+    # Receita total por linha de venda (quantidade * preco_unitario)
+    df["receita_total"] = df["quantidade"] * df["preco_unitario"]
+
+    # Extração de componentes de data
+    df["mes"] = df["data_venda"].dt.month
+    df["trimestre"] = df["data_venda"].dt.quarter.apply(lambda q: f"Q{q}")
+    df["ano"] = df["data_venda"].dt.year
+
+    # Mapeamento para garantir que o nome do mês saia sempre em Português
+    meses_pt = {
+        1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril",
+        5: "Maio", 6: "Junho", 7: "Julho", 8: "Agosto",
+        9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
+    }
+    df["mes_nome"] = df["mes"].map(meses_pt)
+
+    # Classificação da receita por item com numpy.select
+    condicoes = [
+        df["receita_total"] < 500,
+        (df["receita_total"] >= 500) & (df["receita_total"] < 5000),
+        df["receita_total"] >= 5000
+    ]
+    classificacoes = ["Baixo Valor", "Médio Valor", "Alto Valor"]
+    df["faixa_receita_item"] = np.select(condicoes, classificacoes, default="Não Classificado")
+
+    print("=== COLUNAS DERIVADAS CRIADAS ===")
+    print(df[["data_venda", "receita_total", "mes_nome", "trimestre", "faixa_receita_item"]].head())
+    print("=================================\n")
+
+    return df
+
+
+# BLOCO PRINCIPAL
+if __name__ == "__main__":
+    path = "vendas.csv"
+    
+    try:
+        # Carregamos os dados brutos do csv
+        df_vendas = pd.read_csv(path)
+        
+        # Vamos executar a inspeção e leitura dos dados (RF02)
+        inspecionar_dados(df_vendas)
+        
+        # Vamos executar a limpeza (RF03)
+        df_limpo, relatorio_limpeza = limpar_dados(df_vendas)
+        
+        # Vamos executar o enriquecimento (RF04)
+        df_enriquecido = criar_colunas_derivadas(df_limpo)
+        
+        # Vamos salvar o resultado final processado
+        df_enriquecido.to_csv("vendas_limpo.csv", index=False)
+        print("[Sucesso] Pipeline executado com sucesso! Arquivo 'vendas_limpo.csv' gerado.")
+        
+    except FileNotFoundError:
+        print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
