@@ -149,6 +149,35 @@ def calcular_metricas(df):
 
     return metricas
 
+def segmentar_clientes(df):
+    """RF06 – Segmentar Clientes por Nível de Gasto (Versão Avançada)."""
+    
+    # Em vez de apenas somar, vamos calcular o gasto total, a média por Compra e o total de Vendas do cliente
+    clientes = df.groupby("cliente").agg(
+        total_gasto=("receita_total", "sum"),
+        ticket_medio=("receita_total", "mean"),
+        frequencia_compras=("id_venda", "count")
+    ).reset_index()
+
+    # Classificação usando a função lambda com as condições exigidas
+    clientes["segmento"] = clientes["total_gasto"].apply(
+        lambda gasto: "Ouro" if gasto > 15000
+                      else ("Prata" if gasto >= 5000 else "Bronze")
+    )
+
+    # Ordena do cliente que mais gerou receita para o que menos gerou
+    clientes = clientes.sort_values("total_gasto", ascending=False)
+
+    print("=== SEGMENTAÇÃO DE CLIENTES (RANKING TOP 10) ===")
+    # Arredonda os valores float para 2 casas decimais na exibição
+    print(clientes.head(10).round(2).to_string(index=False))
+    
+    print(f"\nDistribuição de segmentos na carteira:")
+    print(clientes["segmento"].value_counts())
+    print("===============================================\n")
+
+    return clientes
+
 # BLOCO PRINCIPAL
 if __name__ == "__main__":
     path = "vendas.csv"
@@ -168,7 +197,10 @@ if __name__ == "__main__":
 
         #RF05: Calcula as agregações estatísticas
         dicionario_metricas = calcular_metricas(df_enriquecido)
-        
+
+        #RF06: Segmenta e classifica nossa carteira de clientes
+        df_clientes_segmentados = segmentar_clientes(df_enriquecido)
+                
         # Vamos salvar o resultado final processado
         df_enriquecido.to_csv("vendas_limpo.csv", index=False)
         print("[Sucesso] Pipeline executado com sucesso! Arquivo 'vendas_limpo.csv' gerado.")
