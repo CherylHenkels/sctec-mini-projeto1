@@ -1,0 +1,1 @@
+#Arquivo principal do projeto, onde estão as funções de análise de dados e geração de insights.
