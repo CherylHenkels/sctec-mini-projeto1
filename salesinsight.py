@@ -70,6 +70,7 @@ def limpar_dados(df_bruto):
 
     print("\n=== RELATÓRIO DE LIMPEZA ===")
     for chave, valor in relatorio.items():
+        #Vamos substituir todos os traços baixos por espaços normais.
         nome_formatado = chave.replace("_", " ").capitalize()
         print(f"  {nome_formatado}: {valor}")
     print("============================\n")
