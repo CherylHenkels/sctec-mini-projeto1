@@ -239,10 +239,6 @@ if __name__ == "__main__":
 
         #RF07: Processamento estatístico matricial via NumPy
         estatisticas_np = calcular_estatisticas_numpy(df_enriquecido)
-                
-        # Vamos salvar o resultado final processado
-        df_enriquecido.to_csv("vendas_limpo.csv", index=False)
-        print("[Sucesso] Pipeline executado com sucesso! Arquivo 'vendas_limpo.csv' gerado.")
-        
+                        
     except FileNotFoundError:
         print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
