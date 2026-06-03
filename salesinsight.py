@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
 def inspecionar_dados(df):
     """RF02 – Inspecionar e Descrever os Dados."""
@@ -214,6 +217,93 @@ def calcular_estatisticas_numpy(df):
         "desvio_padrao": desvio_padrao, "total": total
     }
 
+def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
+    """RF08 – Criar Visualizações com Matplotlib e Seaborn (5 Gráficos)."""
+    os.makedirs(output_dir, exist_ok=True)
+    print("=== INICIANDO EXPORTAÇÃO GRÁFICA ===")
+
+    # Configurações estéticas globais
+    sns.set_theme(style="whitegrid", palette="muted")
+    plt.rcParams["figure.figsize"] = (12, 6)
+    plt.rcParams["axes.titlesize"] = 14
+    plt.rcParams["axes.labelsize"] = 12
+
+    # --- Gráfico 1: Receita por Mês (linha) ---
+    fig, ax = plt.subplots()
+    por_mes = metricas["por_mes"]
+    ax.plot(por_mes["mes"], por_mes["receita_total"], marker="o", linewidth=2, color="#2196F3")
+    ax.fill_between(por_mes["mes"], por_mes["receita_total"], alpha=0.15, color="#2196F3")
+    ax.set_title("Receita Total por Mês (2024)")
+    ax.set_xlabel("Mês")
+    ax.set_ylabel("Receita Total (R$)")
+    ax.set_xticks(range(1, 13))
+    ax.set_xticklabels(["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"], rotation=45)
+    plt.tight_layout()
+    caminho = os.path.join(output_dir, "vendas_por_mes.png")
+    plt.savefig(caminho, dpi=150)
+    plt.close()
+    print(f"  [OK] Gráfico exportado: {caminho}")
+
+    # --- Gráfico 2: Top 5 Produtos (barras horizontais) ---
+    fig, ax = plt.subplots()
+    top = metricas["top_produtos"]
+    sns.barplot(data=top, y="produto", x="receita_total", ax=ax, palette="Blues_d")
+    ax.set_title("Top 5 Produtos por Receita Total")
+    ax.set_xlabel("Receita Total (R$)")
+    ax.set_ylabel("Produto")
+    for container in ax.containers:
+        ax.bar_label(container, fmt="R$ %.0f", padding=5)
+    plt.tight_layout()
+    caminho = os.path.join(output_dir, "top_produtos.png")
+    plt.savefig(caminho, dpi=150)
+    plt.close()
+    print(f"  [OK] Gráfico exportado: {caminho}")
+
+    # --- Gráfico 3: Distribuição de Receita por Região (boxplot) ---
+    fig, ax = plt.subplots()
+    sns.boxplot(data=df, x="regiao", y="receita_total", ax=ax, palette="Set2")
+    ax.set_title("Distribuição de Receita por Transação – Por Região")
+    ax.set_xlabel("Região")
+    ax.set_ylabel("Receita por Venda (R$)")
+    plt.xticks(rotation=30)
+    plt.tight_layout()
+    caminho = os.path.join(output_dir, "distribuicao_regioes.png")
+    plt.savefig(caminho, dpi=150)
+    plt.close()
+    print(f"  [OK] Gráfico exportado: {caminho}")
+
+    # --- Gráfico 4 (Adicional 1): Histograma de Densidade das Vendas ---
+    fig, ax = plt.subplots()
+    sns.histplot(data=df, x="receita_total", kde=True, ax=ax, color="#4CAF50", bins=30)
+    ax.set_title("Frequência e Distribuição do Faturamento das Vendas")
+    ax.set_xlabel("Valor da Receita por Item (R$)")
+    ax.set_ylabel("Contagem de Transações")
+    plt.tight_layout()
+    caminho = os.path.join(output_dir, "distribuicao_faturamento_histograma.png")
+    plt.savefig(caminho, dpi=150)
+    plt.close()
+    print(f"  [OK] Gráfico exportado: {caminho}")
+
+    # --- Gráfico 5 (Adicional 2): Share de Faturamento por Categoria (Donut) ---
+    fig, ax = plt.subplots(figsize=(8, 8))
+    cat_data = metricas["por_categoria"]
+    
+    ax.pie(cat_data["receita_total"], labels=cat_data["categoria"], autopct="%1.1f%%", 
+           startangle=90, colors=sns.color_palette("pastel"), pctdistance=0.80,
+           textprops={'fontsize': 12})
+    
+    circulo_central = plt.Circle((0, 0), 0.60, fc='white')
+    fig.gca().add_artist(circulo_central)
+    
+    ax.set_title("Participação (Share) de Faturamento por Categoria", fontsize=14)
+    plt.tight_layout()
+    caminho = os.path.join(output_dir, "share_faturamento_categoria.png")
+    plt.savefig(caminho, dpi=150)
+    plt.close()
+    print(f"  [OK] Gráfico exportado: {caminho}")
+
+    print("=== VISUALIZAÇÕES GERADAS COM SUCESSO ===\n")
+
 # BLOCO PRINCIPAL
 if __name__ == "__main__":
     path = "vendas.csv"
@@ -239,6 +329,9 @@ if __name__ == "__main__":
 
         #RF07: Processamento estatístico matricial via NumPy
         estatisticas_np = calcular_estatisticas_numpy(df_enriquecido)
+
+        #RF08: Vizualizações via seaborn e matplotlib
+        gerar_visualizacoes(df_enriquecido, dicionario_metricas)
                         
     except FileNotFoundError:
         print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
