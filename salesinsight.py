@@ -22,7 +22,6 @@ def inspecionar_dados(df):
 
     print(f"\nEstatísticas descritivas:\n{df.describe()}")
 
-
 def limpar_dados(df_bruto):
     """RF03 – Limpar e Tratar os Dados."""
 
@@ -358,6 +357,11 @@ class AnalisadorDeVendas:
     def transformar(self):
         """Aplica transformações e cria as colunas derivadas do RF04."""
         self.df_limpo = criar_colunas_derivadas(self.df_limpo)
+
+        print("[Lambda] Calculando coluna de desconto condicional dinâmico...")
+        self.df_limpo["desconto"] = self.df_limpo["receita_total"].apply(
+            lambda x: 0.10 if x > 10000 else 0.05
+        )
         return self
 
     # RF05, RF06 e RF07: Agregações, Segmentação de Clientes e Estatísticas NumPy
@@ -372,6 +376,16 @@ class AnalisadorDeVendas:
     def visualizar(self):
         """Dispara a geração de relatórios gráficos do RF08."""
         gerar_visualizacoes(self.df_limpo, self.metricas)
+        return self
+    
+    # RF11: Usar Funções Lambda e Funções de Ordem Superior
+    def processar_coluna(self, coluna, funcao_transformacao):
+        """Aplica uma função de transformação a uma coluna do DataFrame.
+        Demonstra o uso de funções como argumentos (higher-order function / callback).
+        """
+        if self.df_limpo is not None and coluna in self.df_limpo.columns:
+            self.df_limpo[f"{coluna}_transformado"] = self.df_limpo[coluna].apply(funcao_transformacao)
+            print(f"  [Callback] Coluna '{coluna}_transformado' criada com sucesso via injeção funcional.")
         return self
 
     def resumo(self):
@@ -450,24 +464,39 @@ if __name__ == "__main__":
     path = "vendas.csv"
     
     try:
-        print("Iniciando pipeline através da Classe AnalisadorComProjecao (Herança)...\n")
+        print("Iniciando pipeline por meio da Classe AnalisadorComProjecao...\n")
         
         # Instanciamos a classe FILHA passando o arquivo de dados
         analisador = AnalisadorComProjecao(path, meses_projecao=3)
         
-        # Executamos todo o pipeline herdado da classe pai e adicionamos as projeções da classe filha
+        # Executamos o pipeline base até a visualização gráfica
         (analisador
-         .carregar()       # Pega o arquivo
+         .carregar()       # Carregamos o arquivo
          .inspecionar()    # Executa o RF02 (Inspeção)
          .limpar()         # Executa o RF03 (Limpeza)
-         .transformar()    # Executa o RF04 (Colunas derivadas)
+         .transformar()    # Executa o RF04 (Colunas derivadas + Lambda Interno)
          .analisar()       # Executa o RF05, RF06 (Clientes) e RF07 (NumPy)
-         .visualizar()     # Executa o RF08 (Gráficos)
-         .projetar_tendencia()            # Novo método do RF10
-         .exibir_projecao_detalhada()     # Novo método do RF10
-         .resumo())
+         .visualizar())    # Executa o RF08 (Gráficos)
         
-        print("[Sucesso] O pipeline orientado a objetos com Herança rodou perfeitamente!")
+        # ----------------------------------------------------------------------
+        # RF11: USO DA FUNÇÃO DE ORDEM SUPERIOR COM CALLBACKS (LAMBDAS)
+        # ----------------------------------------------------------------------
+        print("\n--- APLICANDO CALLBACKS DINÂMICOS (RF11) ---")
+        # Callback 1: Normalização de escala da receita por item (Expressa em kR$)
+        analisador.processar_coluna("receita_total", lambda x: round(x / 1000, 2))
+        
+        # Callback 2: Classificação qualitativa de volumes por lote vendido
+        analisador.processar_coluna("quantidade", lambda x: "Alto" if x > 5 else "Baixo")
+        print("--------------------------------------------------\n")
+        # ----------------------------------------------------------------------
+        
+        # Executamos as projeções (RF10) e o fechamento com o resumo executivo
+        (analisador
+         .projetar_tendencia()            # Executa o RF10 (Método da classe filha)
+         .exibir_projecao_detalhada()     # Executa o RF10 (Método da classe filha)
+         .resumo())                       # Mostra o painel final consolidado
+        
+        print("[Sucesso] O pipeline orientado a objetos com Herança e Callbacks rodou perfeitamente!")
                         
     except FileNotFoundError:
         print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
