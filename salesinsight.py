@@ -390,18 +390,72 @@ class AnalisadorDeVendas:
         print("="*50 + "\n")
         return self
 
+# ==============================================================================
+# RF10 – USAR HERANÇA (CLASSE DERIVADA)
+# ==============================================================================
+
+class AnalisadorComProjecao(AnalisadorDeVendas):
+    """Extensão do AnalisadorDeVendas com funcionalidades de projeção simples.
+    Herda todos os métodos da classe pai e adiciona projeção de tendência.
+    """
+
+    def __init__(self, caminho_arquivo, meses_projecao=3):
+        super().__init__(caminho_arquivo)
+        self.meses_projecao = meses_projecao
+        self.projecoes = []
+
+    def projetar_tendencia(self):
+        """Projeta a receita dos próximos meses com base na média móvel dos últimos 3 meses.
+        Método simples sem machine learning – baseado em médias.
+        """
+        if not self.metricas or "por_mes" not in self.metricas:
+            print("[AVISO] Rode .analisar() antes de projetar.")
+            return self
+
+        por_mes = self.metricas["por_mes"].sort_values("mes")
+        receitas_historicas = por_mes["receita_total"].to_numpy()
+
+        # Média móvel dos últimos 3 meses como base da projeção
+        ultimos_3 = receitas_historicas[-3:]
+        media_movel = np.mean(ultimos_3)
+        tendencia = np.std(ultimos_3) * 0.1  # fator de crescimento simples
+
+        ultimo_mes = int(por_mes["mes"].max())
+
+        print("\n=== PROJEÇÃO DE TENDÊNCIA (Média Móvel Simples) ===")
+        print(f"  Base: média dos últimos 3 meses = R$ {media_movel:,.2f}")
+        self.projecoes = []
+
+        for i in range(1, self.meses_projecao + 1):
+            mes_projetado = (ultimo_mes + i - 1) % 12 + 1
+            receita_projetada = media_movel + (tendencia * i)
+            self.projecoes.append({"mes": mes_projetado, "receita_projetada": round(receita_projetada, 2)})
+            print(f"  Mês {mes_projetado:02d} (projeção): R$ {receita_projetada:,.2f}")
+
+        return self
+
+    def exibir_projecao_detalhada(self):
+        """Exibe as cookies de projeções calculadas."""
+        if not self.projecoes:
+            print("[AVISO] Nenhuma projeção disponível. Rode .projetar_tendencia() primeiro.")
+            return self
+        print("\n=== DETALHAMENTO DAS PROJEÇÕES ===")
+        for p in self.projecoes:
+            print(f"  Mês {p['mes']:02d}: R$ {p['receita_projetada']:,.2f}")
+        print("==================================\n")
+        return self
 
 # BLOCO PRINCIPAL
 if __name__ == "__main__":
     path = "vendas.csv"
     
     try:
-        print("Iniciando pipeline através da Classe AnalisadorDeVendas...\n")
+        print("Iniciando pipeline através da Classe AnalisadorComProjecao (Herança)...\n")
         
-        # Instanciamos a classe passando o arquivo de dados
-        analisador = AnalisadorDeVendas(path)
+        # Instanciamos a classe FILHA passando o arquivo de dados
+        analisador = AnalisadorComProjecao(path, meses_projecao=3)
         
-        # Orquestramos a execução de TODOS os RFs de forma encadeada
+        # Executamos todo o pipeline herdado da classe pai e adicionamos as projeções da classe filha
         (analisador
          .carregar()       # Pega o arquivo
          .inspecionar()    # Executa o RF02 (Inspeção)
@@ -409,9 +463,11 @@ if __name__ == "__main__":
          .transformar()    # Executa o RF04 (Colunas derivadas)
          .analisar()       # Executa o RF05, RF06 (Clientes) e RF07 (NumPy)
          .visualizar()     # Executa o RF08 (Gráficos)
-         .resumo())        # Mostra o painel final
+         .projetar_tendencia()            # Novo método do RF10
+         .exibir_projecao_detalhada()     # Novo método do RF10
+         .resumo())
         
-        print("[Sucesso] O pipeline orientado a objetos rodou com TODOS os requisitos!")
+        print("[Sucesso] O pipeline orientado a objetos com Herança rodou perfeitamente!")
                         
     except FileNotFoundError:
         print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
