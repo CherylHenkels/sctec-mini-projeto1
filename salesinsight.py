@@ -551,7 +551,7 @@ class AnalisadorComProjecao(AnalisadorDeVendas):
         return self
 
     def exibir_projecao_detalhada(self):
-        """Exibe as cookies de projeções calculadas."""
+        """Exibe o detalhamento das projeções calculadas."""
         if not self.projecoes:
             print("[AVISO] Nenhuma projeção disponível. Rode .projetar_tendencia() primeiro.")
             return self
@@ -562,8 +562,12 @@ class AnalisadorComProjecao(AnalisadorDeVendas):
         return self
 
 # BLOCO PRINCIPAL
-if __name__ == "__main__":
+def main():
     path = "vendas.csv"
+    
+    print("\n" + "="*60)
+    print("   SALESINSIGHT PY – Pipeline de Análise de Dados de Vendas")
+    print("="*60 + "\n")
     
     try:
         print("Iniciando pipeline por meio da Classe AnalisadorComProjecao...\n")
@@ -603,3 +607,6 @@ if __name__ == "__main__":
                         
     except FileNotFoundError:
         print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
+
+if __name__ == "__main__":
+    main()        
