@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import json
 
 def inspecionar_dados(df):
     """RF02 – Inspecionar e Descrever os Dados."""
@@ -403,6 +404,44 @@ class AnalisadorDeVendas:
             print(f"  Cliente TOP 1:          {top['cliente']} (R$ {top['total_gasto']:,.2f})")
         print("="*50 + "\n")
         return self
+    
+    # RF12: LER E ESCREVER ARQUIVOS (CSV E JSON)
+    def exportar_resultados(self):
+        """Exporta resultados intermediários e métricas do pipeline em formatos CSV e JSON.
+        Demonstra escrita em lote e leitura de confirmação ativa.
+        """
+        if not self.metricas or self.clientes is None or not self.stats_numpy:
+            print("[AVISO] Rode .analisar() antes de tentar exportar os resultados.")
+            return self
+
+        os.makedirs("outputs", exist_ok=True)
+
+        # Exportar CSV com métricas por mês
+        caminho_csv = "outputs/metricas_por_mes.csv"
+        self.metricas["por_mes"].to_csv(caminho_csv, index=False, encoding="utf-8-sig")
+        print(f"  [Escrita] CSV exportado com sucesso: {caminho_csv}")
+
+        # Exportar segmentação de clientes em CSV
+        caminho_clientes = "outputs/segmentacao_clientes.csv"
+        self.clientes.to_csv(caminho_clientes, index=False, encoding="utf-8-sig")
+        print(f"  [Escrita] CSV exportado com sucesso: {caminho_clientes}")
+
+        # Exportar estatísticas gerais computadas via NumPy em JSON
+        caminho_json = "outputs/estatisticas_gerais.json"
+        # O list comprehension blinda contra floats brutos do numpy incompatíveis com JSON nativo
+        stats_serializaveis = {k: round(float(v), 2) for k, v in self.stats_numpy.items()}
+        with open(caminho_json, "w", encoding="utf-8") as f:
+            json.dump(stats_serializaveis, f, indent=4, ensure_ascii=False)
+        print(f"  [Escrita] JSON exportado com sucesso: {caminho_json}")
+
+        # Ler e exibir o JSON exportado para confirmar de forma ativa
+        print("\n  === [Leitura] RE-LENDO ARQUIVO JSON GERADO PARA CONFIRMAÇÃO ===")
+        with open(caminho_json, "r", encoding="utf-8") as f:
+            dados_lidos = json.load(f)
+        print(f"  Conteúdo lido com sucesso:\n{json.dumps(dados_lidos, indent=4)}")
+        print("  ===============================================================\n")
+        
+        return self
 
 # ==============================================================================
 # RF10 – USAR HERANÇA (CLASSE DERIVADA)
@@ -494,6 +533,7 @@ if __name__ == "__main__":
         (analisador
          .projetar_tendencia()            # Executa o RF10 (Método da classe filha)
          .exibir_projecao_detalhada()     # Executa o RF10 (Método da classe filha)
+         .exportar_resultados()           # RF12
          .resumo())                       # Mostra o painel final consolidado
         
         print("[Sucesso] O pipeline orientado a objetos com Herança e Callbacks rodou perfeitamente!")
