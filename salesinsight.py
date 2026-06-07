@@ -200,7 +200,7 @@ def calcular_estatisticas_numpy(df):
     #Conversão da coluna do DataFrame para array NumPy bruto
     receitas = df["receita_total"].to_numpy()
 
-      # 2. Uso de múltiplas funções estatísticas nativas do NumPy
+    # Uso de múltiplas funções estatísticas nativas do NumPy
     media         = np.mean(receitas)
     mediana       = np.median(receitas)
     desvio_padrao = np.std(receitas)
@@ -234,13 +234,13 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     os.makedirs(output_dir, exist_ok=True)
     print("=== INICIANDO EXPORTAÇÃO GRÁFICA ===")
 
-      # Configurações estéticas globais
+    # Configurações estéticas globais
     sns.set_theme(style="whitegrid")
     plt.rcParams["figure.figsize"] = (12, 6)
     plt.rcParams["axes.titlesize"] = 14
     plt.rcParams["axes.labelsize"] = 12
 
-      # --- Gráfico 1: Receita por Mês (linha) ---
+    # --- Gráfico 1: Receita por Mês (linha) ---
     fig, ax     = plt.subplots()
     por_mes = metricas["por_mes"]
     ax.plot(por_mes["mes"], por_mes["receita_total"], marker="o", linewidth=2, color="#2196F3")
@@ -256,7 +256,7 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     plt.close()
     print(f"  [OK] Gráfico exportado: {caminho}")
 
-      # --- Gráfico 2: Top 5 Produtos (barras horizontais) ---
+    # --- Gráfico 2: Top 5 Produtos (barras horizontais) ---
     fig, ax = plt.subplots()
     top = metricas["top_produtos"]
     sns.barplot(data=top, y="produto", x="receita_total", ax=ax, palette="Blues_d", hue="produto")
@@ -271,7 +271,7 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     plt.close()
     print(f"  [OK] Gráfico exportado: {caminho}")
 
-      # --- Gráfico 3: Distribuição de Receita por Região (boxplot) ---
+    # --- Gráfico 3: Distribuição de Receita por Região (boxplot) ---
     fig, ax = plt.subplots()
     sns.boxplot(data=df, x="regiao", y="receita_total", ax=ax, palette="Set2", hue = "regiao")
     ax.set_title("Distribuição de Receita por Transação – Por Região")
@@ -284,7 +284,7 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     plt.close()
     print(f"  [OK] Gráfico exportado: {caminho}")
 
-      # --- Gráfico 4 (Adicional 1): Histograma de Densidade das Vendas ---
+    # --- Gráfico 4 (Adicional 1): Histograma de Densidade das Vendas ---
     fig, ax = plt.subplots()
     sns.histplot(data=df, x="receita_total", kde=True, ax=ax, color="#4CAF50", bins=30)
     ax.set_title("Frequência e Distribuição do Faturamento das Vendas")
@@ -296,7 +296,7 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     plt.close()
     print(f"  [OK] Gráfico exportado: {caminho}")
 
-      # --- Gráfico 5 (Adicional 2): Share de Faturamento por Categoria (Donut) ---
+    # --- Gráfico 5 (Adicional 2): Share de Faturamento por Categoria (Donut) ---
     fig, ax      = plt.subplots(figsize=(8, 8))
     cat_data = metricas["por_categoria"]
     
@@ -316,34 +316,102 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
 
     print("=== VISUALIZAÇÕES GERADAS COM SUCESSO ===\n")
 
+# ==============================================================================
+# CAMADA DE ORIENTAÇÃO A OBJETOS (RF09 - CLASSE BASE)
+# ==============================================================================
+
+class AnalisadorDeVendas:
+    """RF09 – Classe responsável por encapsular o pipeline analítico de vendas.
+    Mantém o estado dos DataFrames e os resultados intermediários na memória RAM.
+    """
+
+    def __init__(self, caminho_arquivo):
+        """Inicializa o analisador com o caminho do arquivo de dados."""
+        self.caminho_arquivo = caminho_arquivo
+        self.df_bruto = None
+        self.df_limpo = None
+        self.metricas = {}
+        self.clientes = None       # Guardará o retorno do RF06
+        self.stats_numpy = {}      # Guardará o retorno do RF07
+        self.relatorio_limpeza = {}
+
+    def carregar(self):
+        """Lê o arquivo CSV e armazena o DataFrame bruto."""
+        self.df_bruto = pd.read_csv(self.caminho_arquivo)
+        print(f"[POO] Dados brutos carregados de: {self.caminho_arquivo}")
+        print(f"      Registros encontrados: {len(self.df_bruto)}")
+        return self
+
+    # RF02: Inspecionar e Descrever os Dados
+    def inspecionar(self):
+        """Chama a função de inspeção inicial do dataset."""
+        inspecionar_dados(self.df_bruto)
+        return self
+
+    # RF03: Limpar e Tratar os Dados
+    def limpar(self):
+        """Limpa os dados chamando a lógica estruturada do RF03."""
+        self.df_limpo, self.relatorio_limpeza = limpar_dados(self.df_bruto.copy())
+        return self
+
+    # RF04: Criar Colunas Derivadas
+    def transformar(self):
+        """Aplica transformações e cria as colunas derivadas do RF04."""
+        self.df_limpo = criar_colunas_derivadas(self.df_limpo)
+        return self
+
+    # RF05, RF06 e RF07: Agregações, Segmentação de Clientes e Estatísticas NumPy
+    def analisar(self):
+        """Calcula de forma centralizada as agregações, segmentações e métricas NumPy."""
+        self.metricas = calcular_metricas(self.df_limpo)             # RF05
+        self.clientes = segmentar_clientes(self.df_limpo)            # RF06
+        self.stats_numpy = calcular_estatisticas_numpy(self.df_limpo) # RF07
+        return self
+
+    # RF08: Visualizações
+    def visualizar(self):
+        """Dispara a geração de relatórios gráficos do RF08."""
+        gerar_visualizacoes(self.df_limpo, self.metricas)
+        return self
+
+    def resumo(self):
+        """Exibe um resumo executivo consolidado no console."""
+        print("\n" + "="*50)
+        print("         RESUMO EXECUTIVO – SALESINSIGHT PY")
+        print("="*50)
+        print(f"  Arquivo analisado:      {self.caminho_arquivo}")
+        print(f"  Registros brutos:       {self.relatorio_limpeza.get('registros_iniciais', 'N/A')}")
+        print(f"  Registros limpos:       {self.relatorio_limpeza.get('registros_finais', 'N/A')}")
+        receita = self.df_limpo["receita_total"].sum() if self.df_limpo is not None else 0
+        print(f"  Receita total anual:    R$ {receita:,.2f}")
+        if self.clientes is not None and not self.clientes.empty:
+            top = self.clientes.iloc[0]
+            print(f"  Cliente TOP 1:          {top['cliente']} (R$ {top['total_gasto']:,.2f})")
+        print("="*50 + "\n")
+        return self
+
+
 # BLOCO PRINCIPAL
 if __name__ == "__main__":
     path = "vendas.csv"
     
     try:
-        # Carregamos os dados brutos do csv
-        df_vendas = pd.read_csv(path)
+        print("Iniciando pipeline através da Classe AnalisadorDeVendas...\n")
         
-        # Vamos executar a inspeção e leitura dos dados (RF02)
-        inspecionar_dados(df_vendas)
+        # Instanciamos a classe passando o arquivo de dados
+        analisador = AnalisadorDeVendas(path)
         
-        #RF03: Vamos executar a limpeza
-        df_limpo, relatorio_limpeza = limpar_dados(df_vendas)
+        # Orquestramos a execução de TODOS os RFs de forma encadeada
+        (analisador
+         .carregar()       # Pega o arquivo
+         .inspecionar()    # Executa o RF02 (Inspeção)
+         .limpar()         # Executa o RF03 (Limpeza)
+         .transformar()    # Executa o RF04 (Colunas derivadas)
+         .analisar()       # Executa o RF05, RF06 (Clientes) e RF07 (NumPy)
+         .visualizar()     # Executa o RF08 (Gráficos)
+         .resumo())        # Mostra o painel final
         
-        #RF04: Vamos executar o enriquecimento
-        df_enriquecido = criar_colunas_derivadas(df_limpo)
-
-        #RF05: Vamos calcular as agregações estatísticas
-        dicionario_metricas = calcular_metricas(df_enriquecido)
-
-        #RF06: Vamos segmentar e classificar nossa carteira de clientes
-        df_clientes_segmentados = segmentar_clientes(df_enriquecido)
-
-        #RF07: Processamento estatístico matricial via NumPy
-        estatisticas_np = calcular_estatisticas_numpy(df_enriquecido)
-
-        #RF08: Vizualizações via seaborn e matplotlib
-        gerar_visualizacoes(df_enriquecido, dicionario_metricas)
+        print("[Sucesso] O pipeline orientado a objetos rodou com TODOS os requisitos!")
                         
     except FileNotFoundError:
         print(f"Erro: O arquivo '{path}' não foi encontrado na raiz do projeto.")
