@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import json
+import re
+
+# ==============================================================================
+# RF02 – LEITURA E INSPEÇÃO DOS DADOS
+# ==============================================================================
 
 def inspecionar_dados(df):
     """RF02 – Inspecionar e Descrever os Dados."""
@@ -22,6 +27,10 @@ def inspecionar_dados(df):
     print(f"\nPrimeiros registros:\n{df.head()}")
 
     print(f"\nEstatísticas descritivas:\n{df.describe()}")
+
+# ==============================================================================
+# RF03 – LIMPEZA DOS DADOS
+# ==============================================================================
 
 def limpar_dados(df_bruto):
     """RF03 – Limpar e Tratar os Dados."""
@@ -75,6 +84,10 @@ def limpar_dados(df_bruto):
 
     return df, relatorio
 
+# ==============================================================================
+# RF04 – CRIAR COLUNAS DERIVADAS
+# ==============================================================================
+
 def criar_colunas_derivadas(df_limpo):
     """RF04 – Criar Colunas Derivadas com Transformações."""
     # Criamos uma cópia para trabalhar com segurança nas novas colunas
@@ -113,6 +126,10 @@ def criar_colunas_derivadas(df_limpo):
     print("=================================\n")
 
     return df
+
+# ==============================================================================
+# RF05 – CALCULAR MÉTRICAS AGREGADAS
+# ==============================================================================
 
 def calcular_metricas(df):
     """RF05 – Calcular Métricas Agregadas (groupby)."""
@@ -164,6 +181,10 @@ def calcular_metricas(df):
       
     return metricas
 
+# ==============================================================================
+# RF06 – SEGMENTAR CLIENTES
+# ==============================================================================
+
 def segmentar_clientes(df):
     """RF06 – Segmentar Clientes por Nível de Gasto (Versão Avançada)."""
     
@@ -192,6 +213,10 @@ def segmentar_clientes(df):
     print("===============================================\n")
 
     return clientes
+
+# ==============================================================================
+# RF07 – CALCULAR ESTATÍSTICAS
+# ==============================================================================
 
 def calcular_estatisticas_numpy(df):
     """RF07 – Calcular Estatísticas Avançadas com NumPy."""
@@ -228,6 +253,10 @@ def calcular_estatisticas_numpy(df):
         "media": media, "mediana": mediana,
         "desvio_padrao": desvio_padrao, "total": total
     }
+
+# ==============================================================================
+# RF08 – VISUALIZAÇÕES
+# ==============================================================================
 
 def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     """RF08 – Criar Visualizações com Matplotlib e Seaborn (5 Gráficos)."""
@@ -317,7 +346,39 @@ def gerar_visualizacoes(df, metricas, output_dir="outputs/graficos"):
     print("=== VISUALIZAÇÕES GERADAS COM SUCESSO ===\n")
 
 # ==============================================================================
-# CAMADA DE ORIENTAÇÃO A OBJETOS (RF09 - CLASSE BASE)
+# RF13 – USAR EXPRESSÕES REGULARES PARA LIMPEZA DE DADOS
+# ==============================================================================
+
+def limpar_strings_com_regex(df):
+    """RF13 – Usa expressões regulares para limpeza de colunas de texto."""
+    # Criamos uma cópia para trabalhar com segurança
+    df_foco = df.copy()
+
+    # 1. Remover caracteres não alfanuméricos do nome do cliente (exceto underline e espaço)
+    df_foco["cliente_limpo"] = df_foco["cliente"].apply(
+        lambda s: re.sub(r"[^a-zA-Z0-9_ ]", "", str(s)).strip()
+    )
+
+    # 2. Identificar registros com padrão de ID inválido (deve ser "Cliente_XXX")
+    padrao_cliente = re.compile(r"^Cliente_\d{3}$")
+    df_foco["cliente_valido"] = df_foco["cliente_limpo"].apply(
+        lambda s: bool(padrao_cliente.match(str(s)))
+    )
+
+    n_invalidos = (~df_foco["cliente_valido"]).sum()
+    print(f"=== LIMPEZA E VALIDAÇÃO COM REGEX (RF13) ===")
+    print(f"  Clientes com formato inválido encontrados: {n_invalidos}")
+    print(f"  Amostra de clientes limpos: {df_foco['cliente_limpo'].head(3).tolist()}")
+    print("============================================\n")
+
+    # Substitui a coluna original pela limpa e remove a coluna de validação para não sujar o DF
+    df_foco["cliente"] = df_foco["cliente_limpo"]
+    df_foco = df_foco.drop(columns=["cliente_limpo", "cliente_valido"])
+
+    return df_foco
+
+# ==============================================================================
+# RF09 - CLASSE BASE. CAMADA DE ORIENTAÇÃO A OBJETOS
 # ==============================================================================
 
 class AnalisadorDeVendas:
@@ -350,8 +411,10 @@ class AnalisadorDeVendas:
 
     # RF03: Limpar e Tratar os Dados
     def limpar(self):
-        """Limpa os dados chamando a lógica estruturada do RF03."""
+        """Limpa os dados chamando a lógica estruturada do RF03 e o Regex do RF13."""
         self.df_limpo, self.relatorio_limpeza = limpar_dados(self.df_bruto.copy())
+
+        self.df_limpo = limpar_strings_com_regex(self.df_limpo)
         return self
 
     # RF04: Criar Colunas Derivadas
