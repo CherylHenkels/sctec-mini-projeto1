@@ -1,1 +1,0 @@
-Aqui ficam todos os arquivos gerados a partir do código principal
