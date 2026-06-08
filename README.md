@@ -19,8 +19,7 @@ O objetivo principal é simular o ciclo de vida de engenharia e análise de dado
 
 ---
 
-## 
-Estrutura do Projeto
+## Estrutura do Projeto
 
 Ao ser executado, o script organiza os resultados na seguinte estrutura de pastas:
 
@@ -49,4 +48,23 @@ MINI-PROJETO1/
 └── utils/
     └── gera_dataset.py             # Geração de dados fictícios para testes
 ```
+
+## Execução
+
+1. Clone o repositório remoto https://github.com/CherylHenkels/sctec-mini-projeto1.git 
+2. Baixe os pacotes necessários para rodar o projeto
+
+```code
+pip install pandas numpy matplotlib seaborn
+```
+3. Certifique-se de estar na pasta `mini-projeto1` e execute no terminal o comando `python3 salesinsight.py` 
+
+## Vídeo de demonstração
+https://drive.google.com/file/d/1Ye1dugiEftoESach8qo7_LVkCgCKXflf/view?usp=sharing
+
+## Autores
+
+* **Cheryl Henkels** - [GitHub](https://github.com/CherylHenkels) 
+* **João Vitor Lovato** - [GitHub](https://github.com/joaovitorcl1000)
+* **Thays Faleiro** - [GitHub](https://github.com/thaysfaleiro-a11y)
 
